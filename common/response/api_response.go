@@ -41,6 +41,5 @@ func HttpResponse(param ParamHTTPResp) {
 	param.Gin.JSON(param.Code, ApiResponse{
 		Status:  constants.Error,
 		Message: message,
-		Data:    param.Data,
 	})
 }

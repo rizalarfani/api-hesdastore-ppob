@@ -11,40 +11,39 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-type AuthApiRepositoryImpl struct {
+type AccountRepositoryImpl struct {
 	db *sqlx.DB
 	qb squirrel.StatementBuilderType
 }
 
-func NewAuthApiRepositoryImpl(db *sqlx.DB) AuhtApiRepository {
-	return &AuthApiRepositoryImpl{
+func NewAccountRepositoryImpl(db *sqlx.DB) AccountRepository {
+	return &AccountRepositoryImpl{
 		db: db,
 		qb: squirrel.StatementBuilder.PlaceholderFormat(squirrel.Question),
 	}
 }
 
-func (r *AuthApiRepositoryImpl) FindByUsername(ctx context.Context, username string) (*model.ApiUser, error) {
-	builder := r.qb.Select("username,password,`keys`.`key`").
+func (r *AccountRepositoryImpl) FindBalanceUser(ctx context.Context, username string) (*model.Account, error) {
+	sqlBuilder := r.qb.Select("nama,saldo").
 		From("users").
-		Join("`keys` ON users.id = `keys`.user_id").
 		Where(squirrel.Eq{
 			"users.username": username,
-			"keys.status":    1,
 		}).
 		Limit(1)
-	sqlStr, args, err := builder.ToSql()
 
+	strSql, args, err := sqlBuilder.ToSql()
 	if err != nil {
 		return nil, errWrap.WrapError(err)
 	}
 
-	var user model.ApiUser
-	if err := r.db.GetContext(ctx, &user, sqlStr, args...); err != nil {
+	var account model.Account
+	if err := r.db.GetContext(ctx, &account, strSql, args...); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, errConstant.ErrUserNotFound
 		}
+
 		return nil, errConstant.ErrInternalServerError
 	}
 
-	return &user, nil
+	return &account, nil
 }
