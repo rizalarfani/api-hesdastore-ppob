@@ -5,18 +5,21 @@ import (
 	serviceAccount "hesdastore/api-ppob/services/account"
 	serviceAuth "hesdastore/api-ppob/services/auth"
 	services "hesdastore/api-ppob/services/brand"
+	serviceProduct "hesdastore/api-ppob/services/product"
 )
 
 type IServiceRegistry interface {
 	Brand() services.BrandService
 	AuthApi() serviceAuth.AuthApiService
 	Account() serviceAccount.AccountService
+	Product() serviceProduct.ProductService
 }
 
 type Registry struct {
 	brandService   services.BrandService
 	authApiService serviceAuth.AuthApiService
 	accountService serviceAccount.AccountService
+	productService serviceProduct.ProductService
 }
 
 func NewServiceRegistry(repository repositories.IRepoRegistry) IServiceRegistry {
@@ -24,6 +27,7 @@ func NewServiceRegistry(repository repositories.IRepoRegistry) IServiceRegistry 
 		brandService:   services.NewBrandServiceImpl(repository),
 		authApiService: serviceAuth.NewAuthApiServiceImpl(repository),
 		accountService: serviceAccount.NewAccountServiceImpl(repository),
+		productService: serviceProduct.NewProductServiceImpl(repository),
 	}
 }
 
@@ -37,4 +41,8 @@ func (r *Registry) AuthApi() serviceAuth.AuthApiService {
 
 func (r *Registry) Account() serviceAccount.AccountService {
 	return r.accountService
+}
+
+func (r *Registry) Product() serviceProduct.ProductService {
+	return r.productService
 }

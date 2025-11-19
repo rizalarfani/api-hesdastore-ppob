@@ -26,6 +26,6 @@ func NewAccountRoute(controller controllers.IControllerRegistry, group *gin.Rout
 }
 
 func (r *AccountRoute) Run() {
-	group := r.group.Group("/account")
-	group.GET("/saldo", r.middleware.Authenticate(), r.controller.AccountController().FindBalanceUser)
+	group := r.group.Group("/account", r.middleware.Authenticate())
+	group.GET("/saldo", r.controller.AccountController().FindBalanceUser)
 }

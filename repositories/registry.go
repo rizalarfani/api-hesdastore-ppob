@@ -4,6 +4,7 @@ import (
 	repositoriesAccount "hesdastore/api-ppob/repositories/account"
 	repositoriesAuth "hesdastore/api-ppob/repositories/auth"
 	repositories "hesdastore/api-ppob/repositories/brand"
+	repositoriesProduct "hesdastore/api-ppob/repositories/product"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -12,12 +13,14 @@ type IRepoRegistry interface {
 	Brand() repositories.BrandRepository
 	AuthApi() repositoriesAuth.AuhtApiRepository
 	Account() repositoriesAccount.AccountRepository
+	Product() repositoriesProduct.ProductRepository
 }
 
 type Registry struct {
 	brandRepo   repositories.BrandRepository
 	authApiRepo repositoriesAuth.AuhtApiRepository
 	accountRepo repositoriesAccount.AccountRepository
+	productRepo repositoriesProduct.ProductRepository
 }
 
 func NewRepositoryRegistry(db *sqlx.DB) IRepoRegistry {
@@ -25,6 +28,7 @@ func NewRepositoryRegistry(db *sqlx.DB) IRepoRegistry {
 		brandRepo:   repositories.NewBrandRepositoryImpl(db),
 		authApiRepo: repositoriesAuth.NewAuthApiRepositoryImpl(db),
 		accountRepo: repositoriesAccount.NewAccountRepositoryImpl(db),
+		productRepo: repositoriesProduct.NewProductRepositoryImpl(db),
 	}
 }
 
@@ -38,4 +42,8 @@ func (r *Registry) AuthApi() repositoriesAuth.AuhtApiRepository {
 
 func (r *Registry) Account() repositoriesAccount.AccountRepository {
 	return r.accountRepo
+}
+
+func (r *Registry) Product() repositoriesProduct.ProductRepository {
+	return r.productRepo
 }

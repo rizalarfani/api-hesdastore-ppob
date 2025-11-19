@@ -4,6 +4,7 @@ import "errors"
 
 var (
 	ErrInternalServerError = errors.New("internal server error")
+	ErrBadRequest          = errors.New("bad request")
 	ErrSQLError            = errors.New("database failed to execute query")
 	ErrTooManyRequests     = errors.New("too many requests")
 	ErrUnauthorized        = errors.New("unauthorized")

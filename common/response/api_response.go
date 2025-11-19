@@ -1,18 +1,19 @@
 package response
 
 import (
+	"errors"
 	"hesdastore/api-ppob/constants"
+	errConstant "hesdastore/api-ppob/constants/error"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-
-	errConstant "hesdastore/api-ppob/constants/error"
+	"github.com/sirupsen/logrus"
 )
 
 type ApiResponse struct {
 	Status  string      `json:"status"`
 	Message any         `json:"message"`
-	Data    interface{} `json:"data"`
+	Data    interface{} `json:"data,omitempty"`
 }
 
 type ParamHTTPResp struct {
@@ -24,22 +25,48 @@ type ParamHTTPResp struct {
 }
 
 func HttpResponse(param ParamHTTPResp) {
+	// SUCCESS
 	if param.Err == nil {
-		param.Gin.JSON(param.Code, ApiResponse{
+		code := param.Code
+		if code == 0 {
+			code = http.StatusOK
+		}
+
+		msg := http.StatusText(code)
+		if param.Message != nil {
+			msg = *param.Message
+		}
+
+		param.Gin.JSON(code, ApiResponse{
 			Status:  constants.Success,
-			Message: http.StatusText(http.StatusOK),
+			Message: msg,
 			Data:    param.Data,
 		})
 		return
 	}
 
-	message := errConstant.ErrInternalServerError.Error()
-	if param.Message != nil {
-		message = *param.Message
+	// ERROR
+	code := http.StatusInternalServerError
+	msg := errConstant.ErrInternalServerError.Error()
+
+	switch {
+	case errors.Is(param.Err, errConstant.ErrBadRequest):
+		code = http.StatusBadRequest
+		msg = param.Err.Error()
+	case errors.Is(param.Err, errConstant.ErrProductNotFound):
+		code = http.StatusNotFound
+		msg = param.Err.Error()
+	default:
+		logrus.Errorf("error: %v", param.Err)
 	}
 
-	param.Gin.JSON(param.Code, ApiResponse{
+	if param.Message != nil {
+		msg = *param.Message
+	}
+
+	param.Gin.JSON(code, ApiResponse{
 		Status:  constants.Error,
-		Message: message,
+		Message: msg,
 	})
+	return
 }
