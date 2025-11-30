@@ -6,7 +6,6 @@ import (
 	errWrap "hesdastore/api-ppob/common/error"
 	errConstant "hesdastore/api-ppob/constants/error"
 	"hesdastore/api-ppob/domain/model"
-	"log"
 
 	"github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
@@ -30,9 +29,11 @@ func (r *ProductRepositoryImpl) FindAllPrabayar(ctx context.Context) ([]*model.P
 		products.product_code,
 		products.product_name,
 		category.name as category_name,
+		category.id as category_id,
 		brands.name,
 		brands.logo,
 		products.type,
+		products.hpp,
 		products.price_seller,
 		products.price_reseller,
 		products.seller_status,
@@ -69,13 +70,16 @@ func (r *ProductRepositoryImpl) FindAllPrabayar(ctx context.Context) ([]*model.P
 
 func (r *ProductRepositoryImpl) FindByProductCode(ctx context.Context, productCode string) (*model.Product, error) {
 	sqlBuilder := r.qb.Select(`
+		products.id,
 		products.metode,
 		products.product_code,
 		products.product_name,
 		category.name as category_name,
+		category.id as category_id,
 		brands.name,
 		brands.logo,
 		products.type,
+		products.hpp,
 		products.price_seller,
 		products.price_reseller,
 		products.admin,
@@ -105,7 +109,6 @@ func (r *ProductRepositoryImpl) FindByProductCode(ctx context.Context, productCo
 		if err == sql.ErrNoRows {
 			return nil, errConstant.ErrProductNotFound
 		}
-		log.Println(err)
 		return nil, errConstant.ErrInternalServerError
 	}
 
@@ -118,6 +121,7 @@ func (r *ProductRepositoryImpl) FindAllPascabayar(ctx context.Context) ([]*model
 		products.product_code,
 		products.product_name,
 		category.name as category_name,
+		category.id as category_id,
 		brands.name,
 		brands.logo,
 		products.type,

@@ -29,6 +29,7 @@ func (r *Registry) Serve() {
 	r.brandRoute().Run()
 	r.accountRoute().Run()
 	r.productRoute().Run()
+	r.transactionRoute().Run()
 }
 
 func (r *Registry) brandRoute() IBrandRoute {
@@ -41,4 +42,8 @@ func (r *Registry) accountRoute() IAccountRoute {
 
 func (r *Registry) productRoute() IProductRoute {
 	return NewProductRoute(r.controller, r.group, r.middleware)
+}
+
+func (r *Registry) transactionRoute() ITransactionRoute {
+	return NewTransactionRoute(r.controller, r.group, r.middleware)
 }

@@ -9,8 +9,11 @@ import (
 var Config AppConfig
 
 type AppConfig struct {
-	Port     int      `json:"port"`
-	Database Database `json:"database"`
+	Port      int       `json:"port"`
+	AppName   string    `json:"appName"`
+	Database  Database  `json:"database"`
+	Digiflazz Digiflazz `json:"digiflazz"`
+	RabbitMQ  RabbitMQ  `json:"rabbitMq"`
 }
 
 type Database struct {
@@ -23,6 +26,20 @@ type Database struct {
 	MaxLifeTimeConnection int    `json:"maxLifeTimeConnection"`
 	MaxIdleConnections    int    `json:"maxIdleConnections"`
 	MaxIdleTime           int    `json:"maxIdleTime"`
+}
+
+type Digiflazz struct {
+	Host     string `json:"host"`
+	Username string `json:"username"`
+	ApiKey   string `json:"apiKey"`
+}
+
+type RabbitMQ struct {
+	Host     string `json:"host"`
+	Port     int    `json:"port"`
+	Username string `json:"username"`
+	Password string `json:"password"`
+	VHost    string `json:"vhost"`
 }
 
 func Load() *AppConfig {
@@ -42,9 +59,24 @@ func Load() *AppConfig {
 		MaxIdleTime:           helper.GetEnvInt("DB_CONN_MAX_IDLE_SEC"),
 	}
 
+	rabbitMQ := RabbitMQ{
+		Host:     helper.GetEnv("RABBITMQ_HOST"),
+		Port:     helper.GetEnvInt("RABBITMQ_PORT"),
+		Username: helper.GetEnv("RABBITMQ_USERNAME"),
+		Password: helper.GetEnv("RABBITMQ_PASSWORD"),
+		VHost:    helper.GetEnv("RABBITMQ_VHOST"),
+	}
+
 	config := AppConfig{
 		Port:     port,
+		AppName:  helper.GetEnv("APP_NAME"),
 		Database: db,
+		RabbitMQ: rabbitMQ,
 	}
+
 	return &config
+}
+
+func (c *AppConfig) WithDigiflazz(d Digiflazz) {
+	c.Digiflazz = d
 }

@@ -29,8 +29,9 @@ func (c *AccountController) FindBalanceUser(ctx *gin.Context) {
 	balance, err := c.service.Account().FindBalanceUser(ctx, user.Username)
 	if err != nil {
 		response.HttpResponse(response.ParamHTTPResp{
-			Err: err,
-			Gin: ctx,
+			Code: http.StatusBadRequest,
+			Err:  err,
+			Gin:  ctx,
 		})
 		return
 	}

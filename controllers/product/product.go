@@ -36,13 +36,15 @@ func (b *ProductController) FindAllPrabayar(ctx *gin.Context) {
 	product, err := b.service.Product().FindAllPrabayar(ctx.Request.Context(), user.Role)
 	if err != nil {
 		response.HttpResponse(response.ParamHTTPResp{
-			Err: err,
-			Gin: ctx,
+			Code: http.StatusNotFound,
+			Err:  err,
+			Gin:  ctx,
 		})
 		return
 	}
 
 	response.HttpResponse(response.ParamHTTPResp{
+		Code: http.StatusOK,
 		Data: product,
 		Gin:  ctx,
 	})
@@ -61,13 +63,15 @@ func (b *ProductController) FindAllPascabayar(ctx *gin.Context) {
 	product, err := b.service.Product().FindAllPascabayar(ctx.Request.Context(), user.Role)
 	if err != nil {
 		response.HttpResponse(response.ParamHTTPResp{
-			Err: err,
-			Gin: ctx,
+			Code: http.StatusNotFound,
+			Err:  err,
+			Gin:  ctx,
 		})
 		return
 	}
 
 	response.HttpResponse(response.ParamHTTPResp{
+		Code: http.StatusOK,
 		Data: product,
 		Gin:  ctx,
 	})
@@ -86,13 +90,15 @@ func (b *ProductController) FindByProductCode(ctx *gin.Context) {
 	product, err := b.service.Product().FindByProductCode(ctx.Request.Context(), ctx.Param("product_code"), user.Role)
 	if err != nil {
 		response.HttpResponse(response.ParamHTTPResp{
-			Err: err,
-			Gin: ctx,
+			Code: http.StatusNotFound,
+			Err:  err,
+			Gin:  ctx,
 		})
 		return
 	}
 
 	response.HttpResponse(response.ParamHTTPResp{
+		Code: http.StatusOK,
 		Data: product,
 		Gin:  ctx,
 	})

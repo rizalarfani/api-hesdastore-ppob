@@ -9,6 +9,7 @@ var (
 	ErrTooManyRequests     = errors.New("too many requests")
 	ErrUnauthorized        = errors.New("unauthorized")
 	ErrForbidden           = errors.New("forbidden")
+	ErrValidatioin         = errors.New("validation error")
 )
 
 var GeneralErrors = []error{
@@ -17,4 +18,5 @@ var GeneralErrors = []error{
 	ErrTooManyRequests,
 	ErrUnauthorized,
 	ErrForbidden,
+	ErrValidatioin,
 }

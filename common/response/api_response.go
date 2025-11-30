@@ -7,13 +7,13 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/sirupsen/logrus"
 )
 
 type ApiResponse struct {
 	Status  string      `json:"status"`
 	Message any         `json:"message"`
 	Data    interface{} `json:"data,omitempty"`
+	Errors  interface{} `json:"errors,omitempty"`
 }
 
 type ParamHTTPResp struct {
@@ -22,12 +22,14 @@ type ParamHTTPResp struct {
 	Message *string
 	Gin     *gin.Context
 	Data    interface{}
+	Errors  interface{}
 }
 
 func HttpResponse(param ParamHTTPResp) {
+	code := param.Code
+
 	// SUCCESS
 	if param.Err == nil {
-		code := param.Code
 		if code == 0 {
 			code = http.StatusOK
 		}
@@ -46,27 +48,24 @@ func HttpResponse(param ParamHTTPResp) {
 	}
 
 	// ERROR
-	code := http.StatusInternalServerError
-	msg := errConstant.ErrInternalServerError.Error()
-
-	switch {
-	case errors.Is(param.Err, errConstant.ErrBadRequest):
-		code = http.StatusBadRequest
-		msg = param.Err.Error()
-	case errors.Is(param.Err, errConstant.ErrProductNotFound):
-		code = http.StatusNotFound
-		msg = param.Err.Error()
-	default:
-		logrus.Errorf("error: %v", param.Err)
-	}
-
+	message := errConstant.ErrInternalServerError.Error()
 	if param.Message != nil {
-		msg = *param.Message
+		message = *param.Message
+	} else if param.Err != nil {
+		if errConstant.ErrMapping(param.Err) {
+			message = param.Err.Error()
+		} else {
+			message = param.Err.Error()
+		}
+
+		if errors.Is(param.Err, errConstant.ErrInternalServerError) {
+			code = http.StatusInternalServerError
+		}
 	}
 
 	param.Gin.JSON(code, ApiResponse{
 		Status:  constants.Error,
-		Message: msg,
+		Message: message,
+		Errors:  param.Errors,
 	})
-	return
 }

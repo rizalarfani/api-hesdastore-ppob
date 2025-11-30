@@ -4,7 +4,9 @@ import (
 	repositoriesAccount "hesdastore/api-ppob/repositories/account"
 	repositoriesAuth "hesdastore/api-ppob/repositories/auth"
 	repositories "hesdastore/api-ppob/repositories/brand"
+	repositoriesConfig "hesdastore/api-ppob/repositories/config"
 	repositoriesProduct "hesdastore/api-ppob/repositories/product"
+	repositoriesTransaction "hesdastore/api-ppob/repositories/transaction"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -14,36 +16,45 @@ type IRepoRegistry interface {
 	AuthApi() repositoriesAuth.AuhtApiRepository
 	Account() repositoriesAccount.AccountRepository
 	Product() repositoriesProduct.ProductRepository
+	Transaction() repositoriesTransaction.TransactionRepository
+	Config() repositoriesConfig.ConfigRepository
+	GetTx() *sqlx.DB
 }
 
 type Registry struct {
-	brandRepo   repositories.BrandRepository
-	authApiRepo repositoriesAuth.AuhtApiRepository
-	accountRepo repositoriesAccount.AccountRepository
-	productRepo repositoriesProduct.ProductRepository
+	db *sqlx.DB
 }
 
 func NewRepositoryRegistry(db *sqlx.DB) IRepoRegistry {
 	return &Registry{
-		brandRepo:   repositories.NewBrandRepositoryImpl(db),
-		authApiRepo: repositoriesAuth.NewAuthApiRepositoryImpl(db),
-		accountRepo: repositoriesAccount.NewAccountRepositoryImpl(db),
-		productRepo: repositoriesProduct.NewProductRepositoryImpl(db),
+		db: db,
 	}
 }
 
 func (r *Registry) Brand() repositories.BrandRepository {
-	return r.brandRepo
+	return repositories.NewBrandRepositoryImpl(r.db)
 }
 
 func (r *Registry) AuthApi() repositoriesAuth.AuhtApiRepository {
-	return r.authApiRepo
+	return repositoriesAuth.NewAuthApiRepositoryImpl(r.db)
 }
 
 func (r *Registry) Account() repositoriesAccount.AccountRepository {
-	return r.accountRepo
+	return repositoriesAccount.NewAccountRepositoryImpl(r.db)
 }
 
 func (r *Registry) Product() repositoriesProduct.ProductRepository {
-	return r.productRepo
+	return repositoriesProduct.NewProductRepositoryImpl(r.db)
+}
+
+func (r *Registry) Transaction() repositoriesTransaction.TransactionRepository {
+	return repositoriesTransaction.NewProductRepositoryImpl(r.db)
+}
+
+func (r *Registry) Config() repositoriesConfig.ConfigRepository {
+	return repositoriesConfig.NewConfigRepositoryImpl(r.db)
+}
+
+func (r *Registry) GetTx() *sqlx.DB {
+	return r.db
 }

@@ -1,11 +1,14 @@
 package services
 
 import (
+	"hesdastore/api-ppob/clients/config"
+	clients "hesdastore/api-ppob/clients/digiflazz"
 	"hesdastore/api-ppob/repositories"
 	serviceAccount "hesdastore/api-ppob/services/account"
 	serviceAuth "hesdastore/api-ppob/services/auth"
 	services "hesdastore/api-ppob/services/brand"
 	serviceProduct "hesdastore/api-ppob/services/product"
+	serviceTransaction "hesdastore/api-ppob/services/transaction"
 )
 
 type IServiceRegistry interface {
@@ -13,21 +16,24 @@ type IServiceRegistry interface {
 	AuthApi() serviceAuth.AuthApiService
 	Account() serviceAccount.AccountService
 	Product() serviceProduct.ProductService
+	Transaction() serviceTransaction.TransactionService
 }
 
 type Registry struct {
-	brandService   services.BrandService
-	authApiService serviceAuth.AuthApiService
-	accountService serviceAccount.AccountService
-	productService serviceProduct.ProductService
+	brandService       services.BrandService
+	authApiService     serviceAuth.AuthApiService
+	accountService     serviceAccount.AccountService
+	productService     serviceProduct.ProductService
+	transactionService serviceTransaction.TransactionService
 }
 
-func NewServiceRegistry(repository repositories.IRepoRegistry) IServiceRegistry {
+func NewServiceRegistry(repository repositories.IRepoRegistry, digifalzz clients.IDigiflazzClient, clientConfig config.IClientConfig) IServiceRegistry {
 	return &Registry{
-		brandService:   services.NewBrandServiceImpl(repository),
-		authApiService: serviceAuth.NewAuthApiServiceImpl(repository),
-		accountService: serviceAccount.NewAccountServiceImpl(repository),
-		productService: serviceProduct.NewProductServiceImpl(repository),
+		brandService:       services.NewBrandServiceImpl(repository),
+		authApiService:     serviceAuth.NewAuthApiServiceImpl(repository),
+		accountService:     serviceAccount.NewAccountServiceImpl(repository),
+		productService:     serviceProduct.NewProductServiceImpl(repository),
+		transactionService: serviceTransaction.NewTransactionServiceImpl(repository, digifalzz, clientConfig),
 	}
 }
 
@@ -45,4 +51,8 @@ func (r *Registry) Account() serviceAccount.AccountService {
 
 func (r *Registry) Product() serviceProduct.ProductService {
 	return r.productService
+}
+
+func (r *Registry) Transaction() serviceTransaction.TransactionService {
+	return r.transactionService
 }
