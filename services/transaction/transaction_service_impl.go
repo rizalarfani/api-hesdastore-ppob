@@ -51,8 +51,8 @@ func (s *TransactionServiceImpl) Order(
 		return nil, err
 	}
 
-	if balance.Balance == 0 {
-		return nil, errConstant.ErrBalanceIsZero
+	if err := s.validateBalance(balance); err != nil {
+		return nil, err
 	}
 
 	product, err = s.repository.Product().FindByProductCode(ctx, request.ProductCode)
@@ -60,17 +60,9 @@ func (s *TransactionServiceImpl) Order(
 		return nil, err
 	}
 
-	if !s.isProductActive(auth.Role, product) {
-		return nil, errConstant.ErrProductIsAvalaible
-	}
-
-	if product.Hpp == nil {
-		return nil, errConstant.ErrProductIsFaulty
-	}
-
-	price = helper.GetPriceProductByRole(auth.Role, *product)
-	if *product.Hpp > price {
-		return nil, errConstant.ErrProductIsFaulty
+	price, err = s.getProductPriceAndValidate(auth.Role, product)
+	if err != nil {
+		return nil, err
 	}
 
 	if balance.Balance < price {
@@ -81,7 +73,7 @@ func (s *TransactionServiceImpl) Order(
 		request.CustomerNo = helper.ToLocal08(request.CustomerNo)
 	}
 
-	ref_id, err := helper.GenerateRandomString(15)
+	refID, err := helper.GenerateRandomString(15)
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +81,7 @@ func (s *TransactionServiceImpl) Order(
 	topupReq = &clients.TopupRequest{
 		SKUCode:    product.ProductCode,
 		CustomerNo: request.CustomerNo,
-		RefID:      ref_id,
+		RefID:      refID,
 	}
 
 	topupResponse, topupErr = s.digifalzz.Topup(ctx, topupReq)
@@ -159,11 +151,38 @@ func (s *TransactionServiceImpl) Order(
 	return &response, nil
 }
 
-func (s *TransactionServiceImpl) isProductActive(role int, product *model.Product) bool {
-	status := helper.GetStatusProductByRole(role, *product)
-	if status == "inactive" {
-		return false
+func (s *TransactionServiceImpl) validateBalance(balance *model.Account) error {
+	if balance == nil {
+		return errConstant.ErrInternalServerError
+	}
+	if balance.Balance == 0 {
+		return errConstant.ErrBalanceIsZero
+	}
+	return nil
+}
+
+func (s *TransactionServiceImpl) getProductPriceAndValidate(role int, product *model.Product) (int, error) {
+	if product == nil {
+		return 0, errConstant.ErrProductIsFaulty
 	}
 
-	return true
+	if !s.isProductActive(role, product) {
+		return 0, errConstant.ErrProductIsAvalaible
+	}
+
+	if product.Hpp == nil {
+		return 0, errConstant.ErrProductIsFaulty
+	}
+
+	price := helper.GetPriceProductByRole(role, *product)
+	if *product.Hpp > price {
+		return 0, errConstant.ErrProductIsFaulty
+	}
+
+	return price, nil
+}
+
+func (s *TransactionServiceImpl) isProductActive(role int, product *model.Product) bool {
+	status := helper.GetStatusProductByRole(role, *product)
+	return status != "inactive"
 }
