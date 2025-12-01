@@ -7,4 +7,5 @@ import (
 
 type AuhtApiRepository interface {
 	FindByUsername(ctx context.Context, username string) (*model.ApiUser, error)
+	FindSecretKeyByUserID(ctx context.Context, userId int) (string, error)
 }

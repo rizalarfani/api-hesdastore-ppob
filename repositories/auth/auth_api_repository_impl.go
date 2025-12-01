@@ -49,3 +49,25 @@ func (r *AuthApiRepositoryImpl) FindByUsername(ctx context.Context, username str
 
 	return &user, nil
 }
+
+func (r *AuthApiRepositoryImpl) FindSecretKeyByUserID(ctx context.Context, userId int) (string, error) {
+	builder := r.qb.Select("secret_key").From("secret_keys").Where(squirrel.Eq{
+		"user_id": userId,
+	}).Limit(1)
+
+	sqlStr, args, err := builder.ToSql()
+
+	if err != nil {
+		return "", errWrap.WrapError(err)
+	}
+
+	var secret_key string
+	if err := r.db.GetContext(ctx, &secret_key, sqlStr, args...); err != nil {
+		if err == sql.ErrNoRows {
+			return "", errConstant.ErrSecretKey
+		}
+		return "", errConstant.ErrInternalServerError
+	}
+
+	return secret_key, nil
+}

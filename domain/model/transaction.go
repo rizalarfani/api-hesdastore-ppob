@@ -5,7 +5,7 @@ import "hesdastore/api-ppob/constants"
 type TransactionOrder struct {
 	UserID          int                         `db:"idUser"`
 	PackageID       int                         `db:"id_paket"`
-	PackageCode     string                      `db:"package_code"`
+	PackageCode     int                         `db:"package_code"`
 	PackageName     string                      `db:"nama_paket"`
 	TransactionID   string                      `db:"trx_id"`
 	PhoneNumber     string                      `db:"no_hp"`

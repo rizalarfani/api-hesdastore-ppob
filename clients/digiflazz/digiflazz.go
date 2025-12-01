@@ -31,6 +31,7 @@ func (c *DigiflazzClient) Topup(ctx context.Context, req *TopupRequest) (*TopupR
 	signature := md5.Sum(dataSign)
 	req.Username = c.client.Username()
 	req.Signature = hex.EncodeToString(signature[:])
+	req.CalbackURL = "https://hesda-store.com/webhooks/digiflazz"
 
 	body, err := json.Marshal(req)
 	if err != nil {

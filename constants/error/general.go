@@ -10,6 +10,7 @@ var (
 	ErrUnauthorized        = errors.New("unauthorized")
 	ErrForbidden           = errors.New("forbidden")
 	ErrValidatioin         = errors.New("validation error")
+	ErrSecretKey           = errors.New("Belum mendapatkan Secret key")
 )
 
 var GeneralErrors = []error{
@@ -19,4 +20,5 @@ var GeneralErrors = []error{
 	ErrUnauthorized,
 	ErrForbidden,
 	ErrValidatioin,
+	ErrSecretKey,
 }

@@ -106,10 +106,23 @@ func (s *TransactionServiceImpl) Order(
 		return nil, err
 	}
 
+	secret, err := s.repository.AuthApi().FindSecretKeyByUserID(ctx, auth.UserID)
+	if err != nil {
+		return nil, err
+	}
+
+	signature := helper.GenerateTransactionSignature(
+		secret,
+		refID,
+		request.CustomerNo,
+		request.ProductCode,
+		price,
+	)
+
 	order, err = s.repository.Transaction().CreateOrder(ctx, tx, &model.TransactionOrder{
 		UserID:          auth.UserID,
 		PackageID:       product.ProductID,
-		PackageCode:     request.ProductCode,
+		PackageCode:     product.ProductID,
 		PackageName:     product.ProductName,
 		TransactionID:   topupResponse.Data.RefID,
 		PhoneNumber:     request.CustomerNo,
@@ -123,6 +136,7 @@ func (s *TransactionServiceImpl) Order(
 		TransactionFrom: "api",
 		CallbackURL:     &request.CallbackURL,
 		Response:        string(topupResString),
+		Signature:       &signature,
 	})
 	if err != nil {
 		return nil, err

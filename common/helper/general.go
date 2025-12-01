@@ -1,7 +1,11 @@
 package helper
 
 import (
+	"crypto/hmac"
 	"crypto/rand"
+	"crypto/sha256"
+	"encoding/hex"
+	"fmt"
 	"hesdastore/api-ppob/domain/model"
 	"math/big"
 	"regexp"
@@ -107,4 +111,24 @@ func GenerateRandomString(length int) (string, error) {
 	}
 
 	return string(result), nil
+}
+
+func GenerateTransactionSignature(
+	secret string,
+	transactioID string,
+	customerNo string,
+	productCode string,
+	price int,
+) string {
+	stringToSign := fmt.Sprintf(
+		"%s|%s|%s|%d",
+		transactioID,
+		customerNo,
+		productCode,
+		price,
+	)
+
+	mac := hmac.New(sha256.New, []byte(secret))
+	mac.Write([]byte(stringToSign))
+	return hex.EncodeToString(mac.Sum(nil))
 }
