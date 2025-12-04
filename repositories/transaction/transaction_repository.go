@@ -11,4 +11,6 @@ import (
 type TransactionRepository interface {
 	CreateOrder(ctx context.Context, tx *sqlx.Tx, order *model.TransactionOrder) (*model.TransactionOrder, error)
 	UpdateBalance(ctx context.Context, tx *sqlx.Tx, req *dto.TransactionUpdateBalanceRequest) error
+	GetTransactionByRefID(ctx context.Context, refId string) (*model.TransactionOrder, error)
+	UpdateTransaction(ctx context.Context, tx *sqlx.Tx, req *dto.TransactionUpdateRequest) error
 }

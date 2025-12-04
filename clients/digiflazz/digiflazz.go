@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"hesdastore/api-ppob/clients/config"
+	"hesdastore/api-ppob/constants"
 
 	errConstant "hesdastore/api-ppob/constants/error"
 )
@@ -31,7 +32,7 @@ func (c *DigiflazzClient) Topup(ctx context.Context, req *TopupRequest) (*TopupR
 	signature := md5.Sum(dataSign)
 	req.Username = c.client.Username()
 	req.Signature = hex.EncodeToString(signature[:])
-	req.CalbackURL = "https://hesda-store.com/webhooks/digiflazz"
+	req.CalbackURL = constants.DigiflazzWebhooksUrl
 
 	body, err := json.Marshal(req)
 	if err != nil {

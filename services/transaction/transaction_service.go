@@ -8,4 +8,5 @@ import (
 
 type TransactionService interface {
 	Order(context.Context, *dto.TransactionOrderRequest, *model.ApiUser) (*dto.TransactionOrderResponse, error)
+	Webhooks(ctx context.Context, headerHubSignature string, rawBody []byte) error
 }

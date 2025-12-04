@@ -47,3 +47,28 @@ func (r *AccountRepositoryImpl) FindBalanceUser(ctx context.Context, username st
 
 	return &account, nil
 }
+
+func (r *AccountRepositoryImpl) FindBalanceUserByUserId(ctx context.Context, userId int) (*model.Account, error) {
+	sqlBuilder := r.qb.Select("nama,saldo").
+		From("users").
+		Where(squirrel.Eq{
+			"users.id": userId,
+		}).
+		Limit(1)
+
+	strSql, args, err := sqlBuilder.ToSql()
+	if err != nil {
+		return nil, errWrap.WrapError(err)
+	}
+
+	var account model.Account
+	if err := r.db.GetContext(ctx, &account, strSql, args...); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, errConstant.ErrUserNotFound
+		}
+
+		return nil, errConstant.ErrInternalServerError
+	}
+
+	return &account, nil
+}

@@ -13,6 +13,14 @@ type TransactionUpdateBalanceRequest struct {
 	NewBalance int `db:"salod"`
 }
 
+type TransactionUpdateRequest struct {
+	TrxId     string
+	Response  string
+	Status    int
+	StatusMsg string
+	Sn        string
+}
+
 type TransactionOrderResponse struct {
 	TransactionsID string                            `json:"transaction_id"`
 	ProductCode    string                            `json:"product_code"`

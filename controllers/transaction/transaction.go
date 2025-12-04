@@ -3,8 +3,10 @@ package controllers
 import (
 	"hesdastore/api-ppob/common/helper"
 	"hesdastore/api-ppob/common/response"
+	"hesdastore/api-ppob/constants"
 	"hesdastore/api-ppob/domain/dto"
 	"hesdastore/api-ppob/services"
+	"io"
 	"net/http"
 
 	error2 "hesdastore/api-ppob/common/error"
@@ -20,6 +22,7 @@ type TransactionController struct {
 
 type ITransactionController interface {
 	Order(*gin.Context)
+	Webhooks(*gin.Context)
 }
 
 func NewBrandController(service services.IServiceRegistry) ITransactionController {
@@ -79,5 +82,41 @@ func (transaction *TransactionController) Order(c *gin.Context) {
 		Code: http.StatusOK,
 		Data: order,
 		Gin:  c,
+	})
+}
+
+func (c *TransactionController) Webhooks(ctx *gin.Context) {
+	if ctx.Request.Method != http.MethodPost {
+		response.HttpResponse(response.ParamHTTPResp{
+			Code: http.StatusMethodNotAllowed,
+			Gin:  ctx,
+		})
+		return
+	}
+
+	bodyBytes, _ := io.ReadAll(ctx.Request.Body)
+
+	xHubSignature := ctx.GetHeader(constants.XHubSignatureDigiflazz)
+	if xHubSignature == "" {
+		response.HttpResponse(response.ParamHTTPResp{
+			Code: http.StatusBadRequest,
+			Gin:  ctx,
+		})
+		return
+	}
+
+	err := c.service.Transaction().Webhooks(ctx, xHubSignature, bodyBytes)
+	if err != nil {
+		response.HttpResponse(response.ParamHTTPResp{
+			Code: http.StatusBadRequest,
+			Err:  err,
+			Gin:  ctx,
+		})
+		return
+	}
+
+	response.HttpResponse(response.ParamHTTPResp{
+		Code: http.StatusOK,
+		Gin:  ctx,
 	})
 }

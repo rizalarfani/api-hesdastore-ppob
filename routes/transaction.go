@@ -26,6 +26,7 @@ func NewTransactionRoute(controller controllers.IControllerRegistry, group *gin.
 }
 
 func (r *TransactionRoute) Run() {
-	group := r.group.Group("/transaction", r.middleware.Authenticate())
-	group.POST("/order", r.controller.TransactionController().Order)
+	group := r.group.Group("/transaction")
+	group.POST("/order", r.middleware.Authenticate(), r.controller.TransactionController().Order)
+	group.POST("/webhooks", r.controller.TransactionController().Webhooks)
 }

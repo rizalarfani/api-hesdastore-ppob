@@ -2,7 +2,12 @@ package services
 
 import (
 	"context"
+	"crypto/hmac"
+	"crypto/sha1"
+	"encoding/hex"
 	"encoding/json"
+	"errors"
+	"strings"
 
 	"hesdastore/api-ppob/clients/config"
 	clients "hesdastore/api-ppob/clients/digiflazz"
@@ -165,6 +170,89 @@ func (s *TransactionServiceImpl) Order(
 	return &response, nil
 }
 
+func (s *TransactionServiceImpl) Webhooks(
+	ctx context.Context,
+	headerSignature string,
+	payload []byte,
+) error {
+	if !verifySignature(headerSignature, payload) {
+		return errors.New("invalid validate signature")
+	}
+
+	var req dto.DigifalzzWebhooksPayload
+	if err := json.Unmarshal(payload, &req); err != nil {
+		return err
+	}
+
+	order, err := s.repository.Transaction().GetTransactionByRefID(ctx, req.Data.RefID)
+	if err != nil {
+		return err
+	}
+
+	tx, err := s.repository.GetTx().BeginTxx(ctx, nil)
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback()
+		}
+	}()
+
+	calbackResponse, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
+
+	switch req.Data.Status {
+	case "Sukses":
+		err = s.repository.Transaction().UpdateTransaction(ctx, tx, &dto.TransactionUpdateRequest{
+			TrxId:     order.TransactionID,
+			Response:  string(calbackResponse),
+			Status:    1,
+			StatusMsg: req.Data.Message,
+			Sn:        *req.Data.Sn,
+		})
+		if err != nil {
+			return nil
+		}
+	case "Gagal":
+		err = s.repository.Transaction().UpdateTransaction(ctx, tx, &dto.TransactionUpdateRequest{
+			TrxId:     order.TransactionID,
+			Response:  string(calbackResponse),
+			Status:    2,
+			StatusMsg: req.Data.Message,
+			Sn:        *req.Data.Sn,
+		})
+
+		if err != nil {
+			return nil
+		}
+
+		balance, err := s.repository.Account().FindBalanceUserByUserId(ctx, order.UserID)
+		if err != nil {
+			return nil
+		}
+
+		newBalance := balance.Balance + order.Price
+		err = s.repository.Transaction().UpdateBalance(ctx, tx, &dto.TransactionUpdateBalanceRequest{
+			UserID:     order.UserID,
+			NewBalance: newBalance,
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (s *TransactionServiceImpl) validateBalance(balance *model.Account) error {
 	if balance == nil {
 		return errConstant.ErrInternalServerError
@@ -199,4 +287,16 @@ func (s *TransactionServiceImpl) getProductPriceAndValidate(role int, product *m
 func (s *TransactionServiceImpl) isProductActive(role int, product *model.Product) bool {
 	status := helper.GetStatusProductByRole(role, *product)
 	return status != "inactive"
+}
+
+func verifySignature(signatureHeader string, rawBody []byte) bool {
+	mac := hmac.New(sha1.New, []byte(helper.GetEnv("SECRET_KEY_DIGIFLAZZ")))
+	mac.Write(rawBody)
+	expectSignature := hex.EncodeToString(mac.Sum(nil))
+
+	parts := strings.SplitN(signatureHeader, "=", 2)
+	if len(parts) != 2 || parts[0] != "sha1" {
+		return false
+	}
+	return hmac.Equal([]byte(parts[1]), []byte(expectSignature))
 }

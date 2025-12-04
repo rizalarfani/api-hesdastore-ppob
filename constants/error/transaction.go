@@ -8,6 +8,7 @@ var (
 	ErrProductIsFaulty     = errors.New("Product sedang ganguan")
 	ErrProductIsAvalaible  = errors.New("Product tidak tersedia di HesdaStore!")
 	ErrServiceNotAvailable = errors.New("Layanan sementara tidak tersedia. Silakan coba beberapa saat lagi!")
+	ErrTransactionNotFound = errors.New("Transaksi tidak ditemukan!")
 )
 
 var TransactionErrors = []error{
@@ -16,4 +17,5 @@ var TransactionErrors = []error{
 	ErrProductIsFaulty,
 	ErrProductIsAvalaible,
 	ErrServiceNotAvailable,
+	ErrTransactionNotFound,
 }
