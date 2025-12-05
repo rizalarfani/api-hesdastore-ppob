@@ -9,6 +9,7 @@ import (
 )
 
 type TransactionRepository interface {
+	GetAll(ctx context.Context, trxID string, userID int) ([]*model.TransactionHistory, error)
 	CreateOrder(ctx context.Context, tx *sqlx.Tx, order *model.TransactionOrder) (*model.TransactionOrder, error)
 	UpdateBalance(ctx context.Context, tx *sqlx.Tx, req *dto.TransactionUpdateBalanceRequest) error
 	GetTransactionByRefID(ctx context.Context, refId string) (*model.TransactionOrder, error)

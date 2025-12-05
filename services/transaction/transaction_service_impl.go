@@ -12,6 +12,7 @@ import (
 	"hesdastore/api-ppob/clients/config"
 	clients "hesdastore/api-ppob/clients/digiflazz"
 	"hesdastore/api-ppob/common/helper"
+	"hesdastore/api-ppob/constants"
 	"hesdastore/api-ppob/domain/dto"
 	"hesdastore/api-ppob/domain/model"
 	"hesdastore/api-ppob/repositories"
@@ -34,6 +35,34 @@ func NewTransactionServiceImpl(
 		repository: repo,
 		digifalzz:  digifalzz,
 	}
+}
+
+func (s *TransactionServiceImpl) GetHistory(ctx context.Context, trxID string, userId int) ([]*dto.TransactionHistoryResponse, error) {
+	historys, err := s.repository.Transaction().GetAll(ctx, trxID, userId)
+	if err != nil {
+		return nil, err
+	}
+
+	data := make([]*dto.TransactionHistoryResponse, 0, len(historys))
+	for _, p := range historys {
+		data = append(data, &dto.TransactionHistoryResponse{
+			TransactionsID: p.TransactionID,
+			ProductName:    p.PackageName,
+			Brand: &dto.BrandResponse{
+				Name: p.Brand.Name,
+				Logo: constants.UploadBrandUrl + "/" + p.Brand.Logo,
+			},
+			Category: &dto.CategoryResponse{
+				Name: p.Category.Name,
+			},
+			Price:      p.Price,
+			CustomerNo: p.PhoneNumber,
+			SN:         p.SN,
+			Status:     p.Status.GetStatusString(),
+			Message:    p.StatusMessage,
+		})
+	}
+	return data, nil
 }
 
 func (s *TransactionServiceImpl) Order(
@@ -166,6 +195,7 @@ func (s *TransactionServiceImpl) Order(
 		ProductName:    product.ProductName,
 		Status:         order.Status.GetStatusString(),
 		Message:        order.StatusMessage,
+		SN:             topupResponse.Data.Sn,
 	}
 	return &response, nil
 }

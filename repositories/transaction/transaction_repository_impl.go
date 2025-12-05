@@ -7,6 +7,7 @@ import (
 	errConstant "hesdastore/api-ppob/constants/error"
 	"hesdastore/api-ppob/domain/dto"
 	"hesdastore/api-ppob/domain/model"
+	"log"
 
 	"github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
@@ -163,4 +164,52 @@ func (r *TransactionRepositoryImpl) UpdateTransaction(ctx context.Context, tx *s
 	}
 
 	return nil
+}
+
+func (r *TransactionRepositoryImpl) GetAll(ctx context.Context, trxID string, userID int) ([]*model.TransactionHistory, error) {
+	builder := r.qb.Select(`
+		nama_paket,
+		trx_id,
+		no_hp,
+		harga,
+		transaksi.status,
+		status_msg,
+		category.name as category_name,
+		category.id as category_id,
+		brands.name,
+		brands.logo,
+		transaksi.sn
+	`).
+		From("transaksi").
+		Join("products ON products.id = transaksi.id_paket").
+		Join("category ON category.id = products.category_id").
+		Join("brands ON brands.id = products.brand_id").
+		Where(squirrel.Eq{
+			"transaksi.idUser":   userID,
+			"transaksi.trx_from": "api",
+		}).
+		OrderBy("transaksi.id desc")
+
+	if trxID != "" {
+		builder = builder.Where(squirrel.Eq{
+			"transaksi.trx_id": trxID,
+		})
+	}
+
+	strSql, args, err := builder.ToSql()
+	if err != nil {
+		return nil, errWrap.WrapError(err)
+	}
+
+	var rows []*model.TransactionHistory
+	if err := r.db.SelectContext(ctx, &rows, strSql, args...); err != nil {
+		log.Println(err)
+		if err == sql.ErrNoRows {
+			return nil, errConstant.ErrTransactionNotFound
+		}
+
+		return nil, errConstant.ErrInternalServerError
+	}
+
+	return rows, nil
 }

@@ -21,3 +21,15 @@ type TransactionOrder struct {
 	CallbackURL     *string                     `db:"url_callback"`
 	Signature       *string                     `db:"signature"`
 }
+
+type TransactionHistory struct {
+	PackageName   string                      `db:"nama_paket"`
+	TransactionID string                      `db:"trx_id"`
+	PhoneNumber   string                      `db:"no_hp"`
+	Price         int                         `db:"harga"`
+	Status        constants.TransactionStatus `db:"status"`
+	StatusMessage *string                     `db:"status_msg"`
+	SN            *string                     `db:"sn"`
+	Category
+	Brand
+}

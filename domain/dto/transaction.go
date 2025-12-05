@@ -25,6 +25,19 @@ type TransactionOrderResponse struct {
 	TransactionsID string                            `json:"transaction_id"`
 	ProductCode    string                            `json:"product_code"`
 	ProductName    string                            `json:"product_name"`
+	SN             *string                           `json:"sn"`
 	Status         constants.TransactionStatusString `json:"status"`
 	Message        string                            `json:"message"`
+}
+
+type TransactionHistoryResponse struct {
+	TransactionsID string                            `json:"transaction_id"`
+	ProductName    string                            `json:"product_name"`
+	Brand          *BrandResponse                    `json:"brand"`
+	Category       *CategoryResponse                 `json:"category"`
+	Price          int                               `json:"price"`
+	CustomerNo     string                            `json:"customer_no"`
+	SN             *string                           `json:"sn"`
+	Status         constants.TransactionStatusString `json:"status"`
+	Message        *string                           `json:"message"`
 }

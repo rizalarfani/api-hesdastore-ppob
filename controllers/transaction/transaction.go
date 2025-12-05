@@ -21,12 +21,42 @@ type TransactionController struct {
 }
 
 type ITransactionController interface {
+	GetHistory(*gin.Context)
 	Order(*gin.Context)
 	Webhooks(*gin.Context)
 }
 
 func NewBrandController(service services.IServiceRegistry) ITransactionController {
 	return &TransactionController{service: service}
+}
+
+func (c *TransactionController) GetHistory(ctx *gin.Context) {
+	user, ok := helper.GetAuthUser(ctx)
+	if !ok {
+		response.HttpResponse(response.ParamHTTPResp{
+			Code: http.StatusUnauthorized,
+			Gin:  ctx,
+		})
+		return
+	}
+
+	trxId := ctx.Params.ByName("transaction_id")
+
+	historys, err := c.service.Transaction().GetHistory(ctx.Request.Context(), trxId, user.UserID)
+	if err != nil {
+		response.HttpResponse(response.ParamHTTPResp{
+			Code: http.StatusNotFound,
+			Err:  err,
+			Gin:  ctx,
+		})
+		return
+	}
+
+	response.HttpResponse(response.ParamHTTPResp{
+		Code: http.StatusOK,
+		Data: historys,
+		Gin:  ctx,
+	})
 }
 
 func (transaction *TransactionController) Order(c *gin.Context) {
