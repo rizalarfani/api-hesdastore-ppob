@@ -1,5 +1,7 @@
 package clients
 
+import "encoding/json"
+
 type TopupRequest struct {
 	Username   string `json:"username"`
 	SKUCode    string `json:"buyer_sku_code"`
@@ -21,4 +23,30 @@ type DataTopup struct {
 	Status     string  `json:"status"`
 	Rc         string  `json:"rc"`
 	Sn         *string `json:"sn"`
+}
+
+type InquiryRequest struct {
+	Command    string `json:"commands"`
+	Username   string `json:"username"`
+	SKUCode    string `json:"buyer_sku_code"`
+	CustomerNo string `json:"customer_no"`
+	RefID      string `json:"ref_id"`
+	Signature  string `json:"sign"`
+}
+
+type InquiryResponse struct {
+	Data DataInquiry `json:"data"`
+}
+
+type DataInquiry struct {
+	RefID         string          `json:"ref_id"`
+	CustomerNo    string          `json:"customer_no"`
+	CustomerName  string          `json:"customer_name"`
+	SKUCode       string          `json:"buyer_sku_code"`
+	OriginalPrice int             `json:"price"`
+	Price         int             `json:"selling_price"`
+	Message       string          `json:"message"`
+	Status        string          `json:"status"`
+	Rc            string          `json:"rc"`
+	Desc          json.RawMessage `json:"desc"`
 }

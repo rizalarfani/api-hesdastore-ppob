@@ -24,7 +24,7 @@ func NewAuthApiRepositoryImpl(db *sqlx.DB) AuhtApiRepository {
 }
 
 func (r *AuthApiRepositoryImpl) FindByUsername(ctx context.Context, username string) (*model.ApiUser, error) {
-	builder := r.qb.Select("users.id,username,password,`keys`.`key`").
+	builder := r.qb.Select("users.id,username,password,`keys`.`key`,users.level").
 		From("users").
 		Join("`keys` ON users.id = `keys`.user_id").
 		Where(squirrel.Eq{

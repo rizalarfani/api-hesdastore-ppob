@@ -3,6 +3,7 @@ package repositories
 import (
 	repositoriesAccount "hesdastore/api-ppob/repositories/account"
 	repositoriesAuth "hesdastore/api-ppob/repositories/auth"
+	repositoriesBilling "hesdastore/api-ppob/repositories/billing"
 	repositories "hesdastore/api-ppob/repositories/brand"
 	repositoriesConfig "hesdastore/api-ppob/repositories/config"
 	repositoriesProduct "hesdastore/api-ppob/repositories/product"
@@ -19,6 +20,7 @@ type IRepoRegistry interface {
 	Transaction() repositoriesTransaction.TransactionRepository
 	Config() repositoriesConfig.ConfigRepository
 	GetTx() *sqlx.DB
+	Billing() repositoriesBilling.BillingRepository
 }
 
 type Registry struct {
@@ -57,4 +59,8 @@ func (r *Registry) Config() repositoriesConfig.ConfigRepository {
 
 func (r *Registry) GetTx() *sqlx.DB {
 	return r.db
+}
+
+func (r *Registry) Billing() repositoriesBilling.BillingRepository {
+	return repositoriesBilling.NewBillingRepositoryImpl(r.db)
 }

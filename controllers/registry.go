@@ -2,6 +2,7 @@ package controllers
 
 import (
 	accountC "hesdastore/api-ppob/controllers/account"
+	billingC "hesdastore/api-ppob/controllers/billing"
 	controllers "hesdastore/api-ppob/controllers/brand"
 	productC "hesdastore/api-ppob/controllers/product"
 	transactionC "hesdastore/api-ppob/controllers/transaction"
@@ -17,6 +18,7 @@ type IControllerRegistry interface {
 	AccountController() accountC.IAccountController
 	ProductController() productC.IProductController
 	TransactionController() transactionC.ITransactionController
+	BillingController() billingC.IBillingController
 }
 
 func NewControllerRegistry(s services.IServiceRegistry) IControllerRegistry {
@@ -39,4 +41,8 @@ func (r *Registry) ProductController() productC.IProductController {
 
 func (r *Registry) TransactionController() transactionC.ITransactionController {
 	return transactionC.NewBrandController(r.service)
+}
+
+func (r *Registry) BillingController() billingC.IBillingController {
+	return billingC.NewBillingController(r.service)
 }
