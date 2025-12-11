@@ -84,6 +84,8 @@ func (r *BillingRepositoryImpl) UpdateTransactionPayBill(ctx context.Context, tx
 		Set("status", pay.Status).
 		Set("status_msg", pay.StatusMessage).
 		Set("sn", pay.SN).
+		Set("url_callback", pay.CallbackURL).
+		Set("signature", pay.Signature).
 		Where(squirrel.Eq{
 			"transaksi.trx_id": pay.TransactionID,
 		})
