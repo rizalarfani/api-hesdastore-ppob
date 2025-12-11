@@ -28,4 +28,5 @@ func NewBillingRoute(controller controllers.IControllerRegistry, group *gin.Rout
 func (r *BillingRoute) Run() {
 	group := r.group.Group("/billing")
 	group.POST("inquiry", r.middleware.Authenticate(), r.controller.BillingController().Inquiry)
+	group.POST("pay", r.middleware.Authenticate(), r.controller.BillingController().Pay)
 }

@@ -19,6 +19,7 @@ type BillingController struct {
 
 type IBillingController interface {
 	Inquiry(*gin.Context)
+	Pay(*gin.Context)
 }
 
 func NewBillingController(service services.IServiceRegistry) IBillingController {
@@ -78,5 +79,61 @@ func (c *BillingController) Inquiry(g *gin.Context) {
 		Code: http.StatusOK,
 		Data: inquiry,
 		Gin:  g,
+	})
+}
+
+func (controller *BillingController) Pay(c *gin.Context) {
+	user, ok := helper.GetAuthUser(c)
+	if !ok {
+		response.HttpResponse(response.ParamHTTPResp{
+			Code: http.StatusUnauthorized,
+			Gin:  c,
+		})
+		return
+	}
+
+	var (
+		request dto.PayBillRequest
+		ctx     = c.Request.Context()
+	)
+
+	err := c.ShouldBindJSON(&request)
+	if err != nil {
+		response.HttpResponse(response.ParamHTTPResp{
+			Code: http.StatusBadRequest,
+			Err:  err,
+			Gin:  c,
+		})
+		return
+	}
+
+	validate := validator.New()
+	if err = validate.Struct(&request); err != nil {
+		errMessage := http.StatusText(http.StatusUnprocessableEntity)
+		errResponse := error2.ErrValidationResponse(err)
+		response.HttpResponse(response.ParamHTTPResp{
+			Code:    http.StatusUnprocessableEntity,
+			Err:     errConstant.ErrValidatioin,
+			Message: &errMessage,
+			Errors:  errResponse,
+			Gin:     c,
+		})
+		return
+	}
+
+	pay, err := controller.service.Billing().PayBill(ctx, &request, user)
+	if err != nil {
+		response.HttpResponse(response.ParamHTTPResp{
+			Code: http.StatusBadRequest,
+			Err:  err,
+			Gin:  c,
+		})
+		return
+	}
+
+	response.HttpResponse(response.ParamHTTPResp{
+		Code: http.StatusOK,
+		Data: pay,
+		Gin:  c,
 	})
 }

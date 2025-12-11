@@ -5,7 +5,6 @@ import (
 	errWrap "hesdastore/api-ppob/common/error"
 	errConstant "hesdastore/api-ppob/constants/error"
 	"hesdastore/api-ppob/domain/model"
-	"log"
 
 	"github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
@@ -66,7 +65,6 @@ func (r *BillingRepositoryImpl) CreateInquiry(ctx context.Context, tx *sqlx.Tx, 
 	}
 
 	res, err := tx.ExecContext(ctx, query, args...)
-	log.Println(err)
 	if err != nil {
 		return nil, err
 	}
@@ -76,4 +74,28 @@ func (r *BillingRepositoryImpl) CreateInquiry(ctx context.Context, tx *sqlx.Tx, 
 	}
 
 	return order, nil
+}
+
+func (r *BillingRepositoryImpl) UpdateTransactionPayBill(ctx context.Context, tx *sqlx.Tx, pay *model.PayBilling) error {
+	builder := r.qb.Update("transaksi").
+		Set("res", pay.Response).
+		Set("saldo_akhir", pay.FinalBalance).
+		Set("saldo_baru", pay.NewBalance).
+		Set("status", pay.Status).
+		Set("status_msg", pay.StatusMessage).
+		Set("sn", pay.SN).
+		Where(squirrel.Eq{
+			"transaksi.trx_id": pay.TransactionID,
+		})
+	query, args, err := builder.ToSql()
+	if err != nil {
+		return errWrap.WrapError(errConstant.ErrSQLError)
+	}
+
+	_, err = tx.ExecContext(ctx, query, args...)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

@@ -20,6 +20,7 @@ type DigiflazzClient struct {
 type IDigiflazzClient interface {
 	Topup(context.Context, *TopupRequest) (*TopupResponse, error)
 	Inquiry(context.Context, *InquiryRequest) (*InquiryResponse, error)
+	PayBill(context.Context, *BillPayRequest) (*BillPaymentResponse, error)
 }
 
 func NewDigiflazzClient(client config.IClientConfig) *DigiflazzClient {
@@ -105,4 +106,39 @@ func (c *DigiflazzClient) Inquiry(ctx context.Context, req *InquiryRequest) (*In
 	}
 
 	return &response, nil
+}
+
+func (c *DigiflazzClient) PayBill(ctx context.Context, req *BillPayRequest) (*BillPaymentResponse, error) {
+	dataSign := []byte(c.client.Username() + c.client.ApiKey() + req.RefID)
+	signature := md5.Sum(dataSign)
+
+	req.Commands = "pay-pasca"
+	req.Username = c.client.Username()
+	req.Signature = hex.EncodeToString(signature[:])
+
+	body, err := json.Marshal(req)
+	if err != nil {
+		return nil, err
+	}
+
+	_, bodyResp, errs := c.client.Client().
+		Post(fmt.Sprintf("%s/transaction", c.client.BaseURL())).
+		Send(string(body)).
+		End()
+
+	if len(errs) > 0 {
+		return nil, errs[0]
+	}
+
+	var response BillPaymentResponse
+	if err := json.Unmarshal([]byte(bodyResp), &response); err != nil {
+		return nil, fmt.Errorf("failed unmarshal digiflazz response: %w", err)
+	}
+
+	switch response.Data.Rc {
+	case "44":
+		return nil, errConstant.ErrServiceNotAvailable
+	default:
+		return &response, nil
+	}
 }

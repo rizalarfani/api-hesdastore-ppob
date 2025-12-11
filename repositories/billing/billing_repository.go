@@ -9,4 +9,5 @@ import (
 
 type BillingRepository interface {
 	CreateInquiry(ctx context.Context, tx *sqlx.Tx, order *model.InquiryBilling) (*model.InquiryBilling, error)
+	UpdateTransactionPayBill(ctx context.Context, tx *sqlx.Tx, pay *model.PayBilling) error
 }

@@ -46,11 +46,8 @@ func (s *BillingServiceImpl) Inquiry(
 		return nil, err
 	}
 
-	if balance == nil {
-		return nil, errConstant.ErrInternalServerError
-	}
-	if balance.Balance == 0 {
-		return nil, errConstant.ErrBalanceIsZero
+	if err = s.validateBalance(balance); err != nil {
+		return nil, err
 	}
 
 	product, err = s.repository.Product().FindByProductCode(ctx, request.ProductCode)
@@ -58,8 +55,7 @@ func (s *BillingServiceImpl) Inquiry(
 		return nil, err
 	}
 
-	status := helper.GetStatusProductByRole(auth.Role, *product)
-	if status == "inactive" {
+	if !s.isProductActive(auth.Role, product) {
 		return nil, errConstant.ErrProductIsAvalaible
 	}
 
@@ -222,4 +218,142 @@ func (s *BillingServiceImpl) Inquiry(
 	}
 
 	return &response, nil
+}
+
+func (s *BillingServiceImpl) PayBill(ctx context.Context, request *dto.PayBillRequest, user *model.ApiUser) (*dto.PayBillResponse, error) {
+	var (
+		err        error
+		balance    *model.Account
+		product    *model.Product
+		payRequest *clients.BillPayRequest
+	)
+
+	balance, err = s.repository.Account().FindBalanceUser(ctx, user.Username)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = s.validateBalance(balance); err != nil {
+		return nil, err
+	}
+
+	product, err = s.repository.Product().FindByProductCode(ctx, request.ProductCode)
+	if err != nil {
+		return nil, err
+	}
+
+	if !s.isProductActive(user.Role, product) {
+		return nil, errConstant.ErrProductIsAvalaible
+	}
+
+	payRequest = &clients.BillPayRequest{
+		RefID:      request.TransactionID,
+		SKUCode:    product.ProductCode,
+		CustomerNo: request.CustomerNo,
+	}
+
+	payBillResponse, err := s.digifalzz.PayBill(ctx, payRequest)
+	if err != nil {
+		return nil, err
+	}
+
+	if balance.Balance < payBillResponse.Data.Price {
+		return nil, errConstant.ErrProductIsFaulty
+	}
+
+	tx, err := s.repository.GetTx().BeginTxx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback()
+		}
+	}()
+
+	payBillDigiRespString, err := json.Marshal(payBillResponse)
+	if err != nil {
+		return nil, err
+	}
+
+	secret, err := s.repository.AuthApi().FindSecretKeyByUserID(ctx, user.UserID)
+	if err != nil {
+		return nil, err
+	}
+
+	signature := helper.GenerateTransactionSignature(
+		secret,
+		request.TransactionID,
+		request.CustomerNo,
+		request.ProductCode,
+		payBillResponse.Data.Price,
+	)
+
+	newBalance := balance.Balance - payBillResponse.Data.Price
+	err = s.repository.Billing().UpdateTransactionPayBill(ctx, tx, &model.PayBilling{
+		TransactionID: payRequest.RefID,
+		FinalBalance:  balance.Balance,
+		NewBalance:    newBalance,
+		Response:      string(payBillDigiRespString),
+		Status:        1,
+		StatusMessage: payBillResponse.Data.Message,
+		SN:            *payBillResponse.Data.Sn,
+		CallbackURL:   &request.CallbackURL,
+		Signature:     &signature,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	err = s.repository.Transaction().UpdateBalance(ctx, tx, &dto.TransactionUpdateBalanceRequest{
+		UserID:     user.UserID,
+		NewBalance: newBalance,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	response := dto.PayBillResponse{
+		Data: dto.DataPayBill{
+			TransactionsID: request.TransactionID,
+			ProductCode:    request.ProductCode,
+			CustomerNo:     payBillResponse.Data.CustomerNo,
+			CustomerName:   payBillResponse.Data.CustomerName,
+			Category: &dto.CategoryResponse{
+				Name: product.Category.Name,
+			},
+			Brand: &dto.BrandResponse{
+				Name: product.Brand.Name,
+				Logo: constants.UploadBrandUrl + "/" + product.Brand.Logo,
+			},
+			Price:   payBillResponse.Data.Price,
+			Sn:      *payBillResponse.Data.Sn,
+			Status:  constants.TransactionStatusString(payBillResponse.Data.Status),
+			Message: payBillResponse.Data.Message,
+		},
+	}
+
+	return &response, nil
+}
+
+func (s *BillingServiceImpl) validateBalance(balance *model.Account) error {
+	if balance == nil {
+		return errConstant.ErrInternalServerError
+	}
+	if balance.Balance == 0 {
+		return errConstant.ErrBalanceIsZero
+	}
+	return nil
+}
+
+func (s *BillingServiceImpl) isProductActive(role int, product *model.Product) bool {
+	status := helper.GetStatusProductByRole(role, *product)
+	return status != "inactive"
 }

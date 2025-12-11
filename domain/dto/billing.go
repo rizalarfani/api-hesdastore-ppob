@@ -2,6 +2,30 @@ package dto
 
 import "hesdastore/api-ppob/constants"
 
+type PayBillRequest struct {
+	TransactionID string `json:"transaction_id" validate:"required"`
+	ProductCode   string `json:"product_code" validate:"required"`
+	CustomerNo    string `json:"customer_no" validate:"required"`
+	CallbackURL   string `json:"callback_url" validate:"omitempty,url"`
+}
+
+type PayBillResponse struct {
+	Data DataPayBill `json:"data"`
+}
+
+type DataPayBill struct {
+	TransactionsID string                            `json:"transaction_id"`
+	ProductCode    string                            `json:"product_code"`
+	Brand          *BrandResponse                    `json:"brand"`
+	Category       *CategoryResponse                 `json:"category"`
+	CustomerNo     string                            `json:"customer_no"`
+	CustomerName   string                            `json:"customer_name"`
+	Price          int                               `json:"price"`
+	Sn             string                            `json:"sn"`
+	Status         constants.TransactionStatusString `json:"status"`
+	Message        string                            `json:"message"`
+}
+
 type InquiryBillRequest struct {
 	ProductCode string `json:"product_code" validate:"required"`
 	CustomerNo  string `json:"customer_no" validate:"required"`

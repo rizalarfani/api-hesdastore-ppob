@@ -19,3 +19,15 @@ type InquiryBilling struct {
 	Type            string                      `db:"tipe"`
 	TransactionFrom string                      `db:"trx_from"`
 }
+
+type PayBilling struct {
+	TransactionID string                      `db:"trx_id"`
+	Response      string                      `db:"res"`
+	FinalBalance  int                         `db:"saldo_akhir"`
+	NewBalance    int                         `db:"saldo_baru"`
+	Status        constants.TransactionStatus `db:"status"`
+	StatusMessage string                      `db:"status_msg"`
+	SN            string                      `db:"sn"`
+	CallbackURL   *string                     `db:"url_callback"`
+	Signature     *string                     `db:"signature"`
+}
