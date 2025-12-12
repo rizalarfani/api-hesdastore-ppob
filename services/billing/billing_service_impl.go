@@ -246,6 +246,15 @@ func (s *BillingServiceImpl) PayBill(ctx context.Context, request *dto.PayBillRe
 		return nil, errConstant.ErrProductIsAvalaible
 	}
 
+	transaction, err := s.repository.Transaction().GetTransactionByRefID(ctx, payRequest.RefID)
+	if err != nil {
+		return nil, err
+	}
+
+	if balance.Balance < transaction.Price {
+		return nil, errConstant.ErrBalanceIsNotEnough
+	}
+
 	payRequest = &clients.BillPayRequest{
 		RefID:      request.TransactionID,
 		SKUCode:    product.ProductCode,
@@ -255,10 +264,6 @@ func (s *BillingServiceImpl) PayBill(ctx context.Context, request *dto.PayBillRe
 	payBillResponse, err := s.digifalzz.PayBill(ctx, payRequest)
 	if err != nil {
 		return nil, err
-	}
-
-	if balance.Balance < payBillResponse.Data.Price {
-		return nil, errConstant.ErrProductIsFaulty
 	}
 
 	tx, err := s.repository.GetTx().BeginTxx(ctx, nil)
