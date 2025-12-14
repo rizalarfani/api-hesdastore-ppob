@@ -7,6 +7,8 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"log"
 	"strings"
 
 	"hesdastore/api-ppob/clients/config"
@@ -15,6 +17,7 @@ import (
 	"hesdastore/api-ppob/constants"
 	"hesdastore/api-ppob/domain/dto"
 	"hesdastore/api-ppob/domain/model"
+	"hesdastore/api-ppob/pkg/rabbitmq"
 	"hesdastore/api-ppob/repositories"
 
 	errConstant "hesdastore/api-ppob/constants/error"
@@ -24,16 +27,19 @@ type TransactionServiceImpl struct {
 	repository repositories.IRepoRegistry
 	digifalzz  clients.IDigiflazzClient
 	client     config.IClientConfig
+	managerRb  rabbitmq.IManager
 }
 
 func NewTransactionServiceImpl(
 	repo repositories.IRepoRegistry,
 	digifalzz clients.IDigiflazzClient,
 	client config.IClientConfig,
+	managerRb rabbitmq.IManager,
 ) TransactionService {
 	return &TransactionServiceImpl{
 		repository: repo,
 		digifalzz:  digifalzz,
+		managerRb:  managerRb,
 	}
 }
 
@@ -230,7 +236,7 @@ func (s *TransactionServiceImpl) Webhooks(
 		}
 	}()
 
-	calbackResponse, err := json.Marshal(payload)
+	calbackResponse, err := json.Marshal(req)
 	if err != nil {
 		return err
 	}
@@ -279,6 +285,22 @@ func (s *TransactionServiceImpl) Webhooks(
 	if err != nil {
 		return err
 	}
+
+	if req.Data.Status == "Sukses" {
+		order.Status = 1
+	} else if req.Data.Status == "Gagal" {
+		order.Status = 2
+	}
+	order.StatusMessage = req.Data.Message
+	order.SN = *req.Data.Sn
+
+	// Kirim data ke rabbitmq
+	go func() {
+		publishCtx := context.Background()
+		if err := s.publishTrasactionUpdateEventWebhook(publishCtx, order); err != nil {
+			log.Printf("⚠️ Failed to publish event (non-critical): %v", err)
+		}
+	}()
 
 	return nil
 }
@@ -329,4 +351,37 @@ func verifySignature(signatureHeader string, rawBody []byte) bool {
 		return false
 	}
 	return hmac.Equal([]byte(parts[1]), []byte(expectSignature))
+}
+
+func (s *TransactionServiceImpl) publishTrasactionUpdateEventWebhook(ctx context.Context, order *model.TransactionOrder) error {
+	var signature string
+	if order.Signature != nil {
+		signature = *order.Signature
+	}
+
+	event := dto.TransactionUpdateEventWebhook{
+		TransactionID: order.TransactionID,
+		ProductName:   order.PackageName,
+		Status:        string(order.Status.GetStatusString()),
+		StatusMessage: order.StatusMessage,
+		SN:            order.SN,
+		CustomerNo:    order.PhoneNumber,
+		Price:         order.Price,
+		CallbackURL:   *order.CallbackURL,
+		Signature:     signature,
+		EventType:     "transaction.update",
+	}
+
+	publisher := s.managerRb.GetPublisher()
+	err := publisher.Publish(
+		ctx,
+		"transaction.events",
+		"transaction.update",
+		event,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to publish transaction update event: %v", err)
+	}
+
+	return nil
 }

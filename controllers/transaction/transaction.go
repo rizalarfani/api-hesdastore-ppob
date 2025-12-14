@@ -7,6 +7,7 @@ import (
 	"hesdastore/api-ppob/domain/dto"
 	"hesdastore/api-ppob/services"
 	"io"
+	"log"
 	"net/http"
 
 	error2 "hesdastore/api-ppob/common/error"
@@ -136,6 +137,7 @@ func (c *TransactionController) Webhooks(ctx *gin.Context) {
 	}
 
 	err := c.service.Transaction().Webhooks(ctx, xHubSignature, bodyBytes)
+	log.Println(err)
 	if err != nil {
 		response.HttpResponse(response.ParamHTTPResp{
 			Code: http.StatusBadRequest,

@@ -2,15 +2,20 @@ package cmd
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	clientsCfg "hesdastore/api-ppob/clients/config"
 	digiclient "hesdastore/api-ppob/clients/digiflazz"
 	"hesdastore/api-ppob/config"
 	"hesdastore/api-ppob/controllers"
+	"hesdastore/api-ppob/domain/dto"
 	"hesdastore/api-ppob/middlewares"
+	"hesdastore/api-ppob/pkg/rabbitmq"
 	"hesdastore/api-ppob/repositories"
 	"hesdastore/api-ppob/services"
 	"log"
+	"os"
+	"os/signal"
 
 	"github.com/spf13/cobra"
 )
@@ -28,7 +33,6 @@ var command = &cobra.Command{
 
 		repository := repositories.NewRepositoryRegistry(db)
 		configRepo, err := repository.Config().GetConfigDigiflazz(ctx)
-
 		if err != nil {
 			log.Fatalf("failed load digiflazz config: %v", err)
 		}
@@ -46,14 +50,58 @@ var command = &cobra.Command{
 		)
 		client := digiclient.NewDigiflazzClient(clientConfig)
 
-		service := services.NewServiceRegistry(repository, client, clientConfig)
+		rabbitMqConfig := rabbitmq.Config{
+			Host:     cfg.RabbitMQ.Host,
+			Port:     cfg.RabbitMQ.Port,
+			Username: cfg.RabbitMQ.Username,
+			Password: cfg.RabbitMQ.Password,
+			VHost:    cfg.RabbitMQ.VHost,
+		}
+		managerRabbitMQ, err := rabbitmq.NewManager(rabbitMqConfig)
+		if err != nil {
+			log.Fatalf("failed to create rabbitmq manager: %v", err)
+		}
+		defer managerRabbitMQ.Close()
+		managerRabbitMQ.SetupWebhook(ctx)
+
+		service := services.NewServiceRegistry(repository, client, clientConfig, managerRabbitMQ)
 		controller := controllers.NewControllerRegistry(service)
 		middleware := middlewares.NewAuthMiddleware(service)
 
 		router := config.NewRoutes(controller, middleware)
 
-		port := fmt.Sprintf(":%d", cfg.Port)
-		router.Run(port)
+		// start serve https
+		go func() {
+			port := fmt.Sprintf(":%d", cfg.Port)
+			router.Run(port)
+		}()
+
+		// start consumer webhook
+		go func() {
+			consumer := managerRabbitMQ.GetConsumer()
+			handler := func(ctx context.Context, body []byte) error {
+				var event dto.TransactionUpdateEventWebhook
+				if err := json.Unmarshal(body, &event); err != nil {
+					return err
+				}
+
+				err := service.Webhook().SendWebhook(ctx, &event)
+				if err != nil {
+					return err
+				}
+
+				return nil
+			}
+
+			consumer.Consume(ctx, "transaction.update.webhook", handler)
+		}()
+
+		quit := make(chan os.Signal, 1)
+		signal.Notify(quit, os.Interrupt)
+
+		<-quit
+		log.Println("Shutting down gracefully...")
+
 	},
 }
 

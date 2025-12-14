@@ -8,6 +8,7 @@ import (
 	repositoriesConfig "hesdastore/api-ppob/repositories/config"
 	repositoriesProduct "hesdastore/api-ppob/repositories/product"
 	repositoriesTransaction "hesdastore/api-ppob/repositories/transaction"
+	repositoriesWebhook "hesdastore/api-ppob/repositories/webhook"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -21,6 +22,7 @@ type IRepoRegistry interface {
 	Config() repositoriesConfig.ConfigRepository
 	GetTx() *sqlx.DB
 	Billing() repositoriesBilling.BillingRepository
+	Webhook() repositoriesWebhook.WebhookRepository
 }
 
 type Registry struct {
@@ -63,4 +65,8 @@ func (r *Registry) GetTx() *sqlx.DB {
 
 func (r *Registry) Billing() repositoriesBilling.BillingRepository {
 	return repositoriesBilling.NewBillingRepositoryImpl(r.db)
+}
+
+func (r *Registry) Webhook() repositoriesWebhook.WebhookRepository {
+	return repositoriesWebhook.NewWebhookRepositoryImpl(r.db)
 }

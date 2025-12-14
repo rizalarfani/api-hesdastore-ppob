@@ -16,6 +16,7 @@ type TransactionOrder struct {
 	NewBalance      int                         `db:"saldo_baru"`
 	Status          constants.TransactionStatus `db:"status"`
 	StatusMessage   string                      `db:"status_msg"`
+	SN              string                      `db:"sn"`
 	Type            string                      `db:"tipe"`
 	TransactionFrom string                      `db:"trx_from"`
 	CallbackURL     *string                     `db:"url_callback"`
