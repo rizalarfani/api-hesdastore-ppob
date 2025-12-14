@@ -17,3 +17,7 @@ type DataPayload struct {
 	Telegram   string  `json:"tele"`
 	Wahtsapp   string  `json:"wa"`
 }
+
+type RetryWebhookRequest struct {
+	TransactionID string `json:"transaction_id" validate:"required"`
+}

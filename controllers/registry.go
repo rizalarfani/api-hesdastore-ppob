@@ -6,6 +6,7 @@ import (
 	controllers "hesdastore/api-ppob/controllers/brand"
 	productC "hesdastore/api-ppob/controllers/product"
 	transactionC "hesdastore/api-ppob/controllers/transaction"
+	webhookC "hesdastore/api-ppob/controllers/webhook"
 	"hesdastore/api-ppob/services"
 )
 
@@ -19,6 +20,7 @@ type IControllerRegistry interface {
 	ProductController() productC.IProductController
 	TransactionController() transactionC.ITransactionController
 	BillingController() billingC.IBillingController
+	WebhookController() webhookC.IWebhookController
 }
 
 func NewControllerRegistry(s services.IServiceRegistry) IControllerRegistry {
@@ -45,4 +47,8 @@ func (r *Registry) TransactionController() transactionC.ITransactionController {
 
 func (r *Registry) BillingController() billingC.IBillingController {
 	return billingC.NewBillingController(r.service)
+}
+
+func (r *Registry) WebhookController() webhookC.IWebhookController {
+	return webhookC.NewWebhookController(r.service)
 }

@@ -7,4 +7,5 @@ import (
 
 type WebhookService interface {
 	SendWebhook(ctx context.Context, payload *dto.TransactionUpdateEventWebhook) error
+	RetryWebhook(ctx context.Context, payload *dto.RetryWebhookRequest) error
 }

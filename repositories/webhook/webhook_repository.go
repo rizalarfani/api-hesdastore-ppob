@@ -7,4 +7,5 @@ import (
 
 type WebhookRepository interface {
 	Create(context.Context, *model.Webhook) error
+	GetDeliveryRef(context.Context, string) (*model.Webhook, error)
 }

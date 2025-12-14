@@ -39,3 +39,22 @@ func (r *WebhookRepositoryImpl) Create(ctx context.Context, webhook *model.Webho
 
 	return nil
 }
+
+func (r *WebhookRepositoryImpl) GetDeliveryRef(ctx context.Context, deleveryRef string) (*model.Webhook, error) {
+	builder := r.qb.Select("*").
+		From("webhook_logs").
+		Where(squirrel.Eq{"delivery_ref": deleveryRef})
+
+	query, args, err := builder.ToSql()
+	if err != nil {
+		return nil, errWrap.WrapError(errConstant.ErrSQLError)
+	}
+
+	var webhook model.Webhook
+	err = r.db.GetContext(ctx, &webhook, query, args...)
+	if err != nil {
+		return nil, errWrap.WrapError(errConstant.ErrSQLError)
+	}
+
+	return &webhook, nil
+}

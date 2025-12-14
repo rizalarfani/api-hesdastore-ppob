@@ -12,6 +12,8 @@ import (
 	"net/http"
 	"time"
 
+	errConstant "hesdastore/api-ppob/constants/error"
+
 	"github.com/sirupsen/logrus"
 )
 
@@ -101,6 +103,75 @@ func (s *WebhookServiceImpl) SendWebhook(ctx context.Context, payload *dto.Trans
 		ResponseError:  responError,
 		Signature:      payload.Signature,
 	})
+	return err
+}
+
+func (s *WebhookServiceImpl) RetryWebhook(ctx context.Context, req *dto.RetryWebhookRequest) error {
+	deleveryRef := req.TransactionID
+
+	transaction, err := s.repository.Transaction().GetTransactionByRefID(ctx, deleveryRef)
+	if err != nil {
+		return errConstant.ErrTransactionNotFound
+	}
+
+	clientPayload := dto.WebhooksPayloadToClient{
+		TransactionID: transaction.TransactionID,
+		ProductName:   transaction.PackageName,
+		CustomerNo:    transaction.PhoneNumber,
+		Status:        string(transaction.Status.GetStatusString()),
+		StatusMessage: transaction.StatusMessage,
+		SN:            transaction.SN,
+		Timestamp:     time.Now().Format(time.RFC3339),
+	}
+
+	jsonPayload, err := json.Marshal(clientPayload)
+	if err != nil {
+		return s.logError(deleveryRef, nil, "", http.StatusInternalServerError, err)
+	}
+
+	// create HTTP reqeuest to client
+	request, err := http.NewRequestWithContext(
+		ctx,
+		http.MethodPost,
+		*transaction.CallbackURL,
+		bytes.NewBuffer(jsonPayload),
+	)
+
+	if err != nil {
+		return s.logError(deleveryRef, nil, string(jsonPayload), 0, err)
+	}
+
+	// Set headers
+	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("X-Hesda-Event", "transaction.update")
+	request.Header.Set("X-Hesda-Signature", *transaction.Signature)
+
+	resp, err := s.httpClient.Do(request)
+	if err != nil {
+		return s.logError(deleveryRef, nil, string(jsonPayload), 0, err)
+	}
+	defer resp.Body.Close()
+
+	responseBody, _ := io.ReadAll(resp.Body)
+	var responError string
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		responError = fmt.Sprintf("HTTP %d: %s", resp.StatusCode, http.StatusText(resp.StatusCode))
+	} else {
+		responError = ""
+	}
+
+	err = s.repository.Webhook().Create(context.Background(), &model.Webhook{
+		EventType:      "transaction.update",
+		DeleveryRef:    deleveryRef,
+		Endpoint:       *transaction.CallbackURL,
+		RequestBody:    string(jsonPayload),
+		ResponseBody:   string(responseBody),
+		ResponseStatus: resp.StatusCode,
+		ResponseError:  responError,
+		Signature:      *transaction.Signature,
+	})
+
 	return err
 }
 

@@ -31,6 +31,7 @@ func (r *Registry) Serve() {
 	r.productRoute().Run()
 	r.transactionRoute().Run()
 	r.billingRoute().Run()
+	r.webhookRoute().Run()
 }
 
 func (r *Registry) brandRoute() IBrandRoute {
@@ -51,4 +52,8 @@ func (r *Registry) transactionRoute() ITransactionRoute {
 
 func (r *Registry) billingRoute() IBillingRoute {
 	return NewBillingRoute(r.controller, r.group, r.middleware)
+}
+
+func (r *Registry) webhookRoute() IWebhookRoute {
+	return NewWebhookRoute(r.controller, r.group, r.middleware)
 }
