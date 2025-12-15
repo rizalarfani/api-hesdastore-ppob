@@ -3,9 +3,12 @@ name: ppob-service-hesda
 services:
   ppob-service:
     container_name: ppob-service-hesda
-    image: rijalarfani/ppob-service-hesda:1.0.0
+    image: rijalarfani/ppob-service-hesda:1.0.1
     ports:
       - "8001:8001"
     env_file:
       - .env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
     restart: unless-stopped

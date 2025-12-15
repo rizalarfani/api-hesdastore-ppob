@@ -38,7 +38,7 @@ var command = &cobra.Command{
 		}
 
 		cfg.WithDigiflazz(config.Digiflazz{
-			Host:     "https://digiflazz.hesda-store.com/v1",
+			Host:     configRepo.BaseURL,
 			Username: configRepo.Username,
 			ApiKey:   configRepo.ApiKey,
 		})

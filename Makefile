@@ -28,3 +28,12 @@ docker-build: ## Build the Docker image with a specified tag
 	fi
 	docker build --platform linux/amd64 -t rijalarfani/ppob-service-hesda:$(tag) .
 	@echo "$(GREEN)Docker image built with tag '$(tag)'$(RESET)"
+
+docker-push:
+	@echo "$(CYAN)Building Docker image...$(RESET)"
+	@if [ -z "$(tag)" ]; then \
+		echo "$(YELLOW)Error: Please specify the 'tag' parameter, e.g., make docker-push tag=1.0.0$(RESET)"; \
+		exit 1; \
+	fi
+	docker push rijalarfani/ppob-service-hesda:$(tag)
+	@echo "$(GREEN)Docker image built with tag '$(tag)'$(RESET)"
