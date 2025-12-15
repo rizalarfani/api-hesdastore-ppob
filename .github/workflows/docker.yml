@@ -35,7 +35,7 @@ jobs:
         with:
           context: .
           push: true
-          tag: |
+          tags: |
             rijalarfani/ppob-service-hesda:${{ steps.version.outputs.tag }}
             rijalarfani/ppob-service-hesda:${{ steps.version.outputs.version }}
             
