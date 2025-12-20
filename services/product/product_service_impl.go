@@ -70,8 +70,6 @@ func (s *ProductServiceImpl) FindAllPascabayar(ctx context.Context, role int) ([
 			Admin:       *p.Admin,
 			Commission:  *p.Commission,
 			Status:      helper.GetStatusProductByRole(role, *p),
-			StartCutOff: *p.StartCutOff,
-			EndCutOff:   *p.EndCutOff,
 			Description: p.Description,
 		})
 	}
