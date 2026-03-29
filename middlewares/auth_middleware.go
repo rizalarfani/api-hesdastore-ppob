@@ -39,7 +39,7 @@ func validateBasicAuthAndApiKey(c *gin.Context, m *AuthMiddleware) (int, error) 
 		return http.StatusUnauthorized, errConstant.ErrUnauthorized
 	}
 
-	username := parts[0]
+	email := parts[0]
 	password := parts[1]
 
 	var apiKey string = c.GetHeader(constants.XApiKey)
@@ -48,7 +48,7 @@ func validateBasicAuthAndApiKey(c *gin.Context, m *AuthMiddleware) (int, error) 
 	}
 
 	request := &dto.ApiUserRequest{
-		Username: username,
+		Email:    email,
 		Password: password,
 		ApiKey:   apiKey,
 	}

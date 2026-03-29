@@ -22,7 +22,7 @@ func NewAuthApiServiceImpl(repo repositories.IRepoRegistry) AuthApiService {
 }
 
 func (s *AuthApiServiceImpl) ValidateAuthApi(ctx context.Context, request *dto.ApiUserRequest) (*model.ApiUser, error) {
-	user, err := s.repository.AuthApi().FindByUsername(ctx, request.Username)
+	user, err := s.repository.AuthApi().FindByEmail(ctx, request.Email)
 	if err != nil {
 		return nil, err
 	}
